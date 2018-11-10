@@ -51,6 +51,15 @@
     <Filter Include="Blocks\CinderFluid\src\cinderfx">
       <UniqueIdentifier>{8FFC6C6D-6AF1-4BDE-A801-54F211D75DB7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="assets">
+      <UniqueIdentifier>{e731edd0-bc70-42ac-a182-444cc05d6e2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="debug">
+      <UniqueIdentifier>{9663dab9-4f44-44e1-97d2-0b1ffe692884}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="release">
+      <UniqueIdentifier>{426659f0-ad59-464c-9c55-457ec542d26d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\FluidApp.cpp">
@@ -219,5 +228,18 @@
     <ResourceCompile Include="Resources.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\assets\uniforms.json">
+      <Filter>assets</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="build\Win32\Debug\SDASettings.xml">
+      <Filter>debug</Filter>
+    </Xml>
+    <Xml Include="build\Win32\Release\SDASettings.xml">
+      <Filter>release</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

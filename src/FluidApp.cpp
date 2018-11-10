@@ -51,6 +51,9 @@ private:
 	float						mDenScale;
 	float						mRgbScale;
 	ci::vec2					mPrevPos;
+	ci::vec2					mWSNewPos;
+	ci::vec2					mWSPrevPos;
+	ci::vec4					mWsPos;
 	ci::Colorf					mColor;
 	std::map<int, ci::Colorf>	mTouchColors;
 	cinderfx::Fluid2D			mFluid2D;
@@ -162,6 +165,31 @@ void FluidApp::update()
 {
 	mSDASession->setFloatUniformValueByIndex(mSDASettings->IFPS, getAverageFps());
 	mSDASession->update();
+
+	mWsPos = mSDASession->getVec4UniformValueByIndex(207);
+		stringstream s;
+		s << "mWsPos x:" << toString(mWsPos.x) << ", mWsPos y:" << toString(mWsPos.y);
+		s << ", mWSNewPos x:" << toString(mWSNewPos.x) << ", mWSNewPos y:" << toString(mWSNewPos.y);
+		s << ", mWSPrevPos x:" << toString(mWSPrevPos.x) << ", mWSPrevPos y:" << toString(mWSPrevPos.y);
+	mWSNewPos = vec2(mWsPos.x, mWsPos.y);
+	if (mWSPrevPos != mWSNewPos) {
+		mColor.r = Rand::randFloat();
+		mColor.g = Rand::randFloat();
+		mColor.b = Rand::randFloat();
+		float x = ((mWSNewPos.x + 1.0f)*mFluid2D.resX());
+		float y = ((mWSNewPos.y + 1.0f)*mFluid2D.resY());
+		s << "x:" << toString(x) << ", y:" << toString(y);
+
+		vec2 dv = mWSNewPos - mWSPrevPos;
+		mFluid2D.splatVelocity(x, y, mVelScale*dv);
+		mFluid2D.splatRgb(x, y, mRgbScale*mColor);
+		if (mFluid2D.isBuoyancyEnabled()) {
+			mFluid2D.splatDensity(x, y, mDenScale);
+		}
+	}
+	mWSPrevPos = mWSNewPos;
+		CI_LOG_W(s.str());
+
 	mFluid2D.step();
 }
 void FluidApp::cleanup()
@@ -188,6 +216,9 @@ void FluidApp::mouseDown(MouseEvent event)
 	mColor.r = Rand::randFloat();
 	mColor.g = Rand::randFloat();
 	mColor.b = Rand::randFloat();
+	stringstream s;
+	s << "mx:" << toString(mPrevPos.x) << ",my:" << toString(mPrevPos.y);
+	CI_LOG_W(s.str());
 }
 void FluidApp::mouseDrag(MouseEvent event)
 {
@@ -202,7 +233,10 @@ void FluidApp::mouseDrag(MouseEvent event)
 			mFluid2D.splatDensity(x, y, mDenScale);
 		}
 	}
-
+	stringstream s;
+	s << "x:" << toString(x) << ",y:" << toString(y);
+	s << ", mx:" << toString(mPrevPos.x) << ",my:" << toString(mPrevPos.y);
+	CI_LOG_W(s.str());
 	mPrevPos = event.getPos();
 }
 void FluidApp::mouseUp(MouseEvent event)
@@ -252,22 +286,22 @@ void FluidApp::touchesEnded(TouchEvent event)
 
 void FluidApp::keyDown(KeyEvent event)
 {
-	
-		switch (event.getCode()) {
-		case KeyEvent::KEY_r:
-			mFluid2D.initSimData();
-			break;
-		case KeyEvent::KEY_ESCAPE:
-			// quit the application
-			quit();
-			break;
-		case KeyEvent::KEY_h:
-			// mouse cursor and ui visibility
-			mSDASettings->mCursorVisible = !mSDASettings->mCursorVisible;
-			setUIVisibility(mSDASettings->mCursorVisible);
-			break;
-		}
-	
+
+	switch (event.getCode()) {
+	case KeyEvent::KEY_r:
+		mFluid2D.initSimData();
+		break;
+	case KeyEvent::KEY_ESCAPE:
+		// quit the application
+		quit();
+		break;
+	case KeyEvent::KEY_h:
+		// mouse cursor and ui visibility
+		mSDASettings->mCursorVisible = !mSDASettings->mCursorVisible;
+		setUIVisibility(mSDASettings->mCursorVisible);
+		break;
+	}
+
 }
 void FluidApp::keyUp(KeyEvent event)
 {
@@ -307,6 +341,10 @@ void FluidApp::draw()
 
 void prepareSettings(App::Settings *settings)
 {
+#if defined( CINDER_MSW )
+	settings->setConsoleWindowEnabled();
+#endif
+	settings->setMultiTouchEnabled();
 	settings->setWindowSize(640, 480);
 }
 
