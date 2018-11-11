@@ -13,7 +13,7 @@
 #include "SDALog.h"
 // Spout
 #include "CiSpoutOut.h"
-// fluid
+// Fluid
 #include "cinderfx/Fluid2D.h"
 
 using namespace ci;
@@ -78,6 +78,8 @@ private:
 	void							positionRenderWindow();
 	bool							mFadeInDelay;
 	SpoutOut 						mSpoutOut;
+	map<int, vec4>					mJoints;
+
 };
 
 
@@ -165,30 +167,46 @@ void FluidApp::update()
 {
 	mSDASession->setFloatUniformValueByIndex(mSDASettings->IFPS, getAverageFps());
 	mSDASession->update();
-
+	// left hand
 	mWsPos = mSDASession->getVec4UniformValueByIndex(207);
-		stringstream s;
-		s << "mWsPos x:" << toString(mWsPos.x) << ", mWsPos y:" << toString(mWsPos.y);
-		s << ", mWSNewPos x:" << toString(mWSNewPos.x) << ", mWSNewPos y:" << toString(mWSNewPos.y);
-		s << ", mWSPrevPos x:" << toString(mWSPrevPos.x) << ", mWSPrevPos y:" << toString(mWSPrevPos.y);
+	stringstream s;
+	s << "mWsPos x:" << toString(mWsPos.x) << ", mWsPos y:" << toString(mWsPos.y);
+	s << ", mWSNewPos x:" << toString(mWSNewPos.x) << ", mWSNewPos y:" << toString(mWSNewPos.y);
+	s << ", mWSPrevPos x:" << toString(mWSPrevPos.x) << ", mWSPrevPos y:" << toString(mWSPrevPos.y);
 	mWSNewPos = vec2(mWsPos.x, mWsPos.y);
-	if (mWSPrevPos != mWSNewPos) {
-		mColor.r = Rand::randFloat();
-		mColor.g = Rand::randFloat();
-		mColor.b = Rand::randFloat();
-		float x = ((mWSNewPos.x + 1.0f)*mFluid2D.resX());
-		float y = ((mWSNewPos.y + 1.0f)*mFluid2D.resY());
-		s << "x:" << toString(x) << ", y:" << toString(y);
+	//if (mWSPrevPos != mWSNewPos) {
+	mColor.r = Rand::randFloat();
+	mColor.g = Rand::randFloat();
+	mColor.b = Rand::randFloat();
+	float x = ((mWSNewPos.x + 0.5f)*mFluid2D.resX());
+	float y = ((mWSNewPos.y + 0.5f)*mFluid2D.resY());
+	s << "x:" << toString(x) << ", y:" << toString(y);
+	s << "mFluid2D.resX:" << toString(mFluid2D.resX()) << ", mFluid2D.resY:" << toString(mFluid2D.resY());
 
-		vec2 dv = mWSNewPos - mWSPrevPos;
-		mFluid2D.splatVelocity(x, y, mVelScale*dv);
-		mFluid2D.splatRgb(x, y, mRgbScale*mColor);
-		if (mFluid2D.isBuoyancyEnabled()) {
-			mFluid2D.splatDensity(x, y, mDenScale);
-		}
+	vec2 dv = mWSNewPos - mWSPrevPos;
+	mFluid2D.splatVelocity(x, y, mVelScale*dv);
+	mFluid2D.splatRgb(x, y, mRgbScale*mColor);
+	if (mFluid2D.isBuoyancyEnabled()) {
+		mFluid2D.splatDensity(x, y, mDenScale);
 	}
+	//}
 	mWSPrevPos = mWSNewPos;
-		CI_LOG_W(s.str());
+	CI_LOG_W(s.str());
+
+	// right hand
+	vec4 mHandRPos = mSDASession->getVec4UniformValueByIndex(211);
+	vec4 mHandTipRPos = mSDASession->getVec4UniformValueByIndex(0);
+	x = ((mHandRPos.x + 0.5f) / (float)getWindowWidth())*mFluid2D.resX();
+	y = ((mHandRPos.y + 0.5f) / (float)getWindowHeight())*mFluid2D.resY();
+	mHandTipRPos.x = ((mHandTipRPos.x + 0.5f) / (float)getWindowWidth())*mFluid2D.resX();
+	mHandTipRPos.y = ((mHandTipRPos.y + 0.5f) / (float)getWindowHeight())*mFluid2D.resY();
+
+	dv = vec2(mHandRPos.x, mHandRPos.y) - vec2(mHandTipRPos.x, mHandTipRPos.y);
+	mFluid2D.splatVelocity(x, y, mVelScale*dv);
+	mFluid2D.splatRgb(x, y, mRgbScale*mColor);
+	if (mFluid2D.isBuoyancyEnabled()) {
+		mFluid2D.splatDensity(x, y, mDenScale);
+	}
 
 	mFluid2D.step();
 }
@@ -319,6 +337,7 @@ void FluidApp::draw()
 			timeline().apply(&mSDASettings->iAlpha, 0.0f, 1.0f, 1.5f, EaseInCubic());
 		}
 	}
+	gl::setMatricesWindow(mSDASettings->mRenderWidth, mSDASettings->mRenderHeight, false);
 
 	//RenderFluidRgb( mFluid2D, getWindowBounds() );
 	float* data = const_cast<float*>((float*)mFluid2D.rgb().data());
@@ -332,9 +351,18 @@ void FluidApp::draw()
 	}
 	gl::draw(mTex, getWindowBounds());
 
-
 	// Spout Send
 	mSpoutOut.sendViewport();
+
+	// all joints
+
+	for (unsigned i = 200; i < 225; i++)
+	{
+		vec4 mPos = mSDASession->getVec4UniformValueByIndex(i);
+		gl::drawSolidCircle(vec2((mPos.x + 0.5f) * getWindowWidth() + getWindowWidth() / 2, 
+			(mPos.y + 0.5f) * getWindowHeight() + getWindowHeight() / 2), 10);
+	}
+	
 	mParams.draw();
 	getWindow()->setTitle(mSDASettings->sFps + " fps SDAFluid");
 }
