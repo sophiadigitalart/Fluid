@@ -337,7 +337,7 @@ void FluidApp::draw()
 			timeline().apply(&mSDASettings->iAlpha, 0.0f, 1.0f, 1.5f, EaseInCubic());
 		}
 	}
-	gl::setMatricesWindow(mSDASettings->mRenderWidth, mSDASettings->mRenderHeight, false);
+	//gl::setMatricesWindow(mSDASettings->mRenderWidth, mSDASettings->mRenderHeight, true);
 
 	//RenderFluidRgb( mFluid2D, getWindowBounds() );
 	float* data = const_cast<float*>((float*)mFluid2D.rgb().data());
